@@ -1,11 +1,15 @@
 # nested_dict_to_df
 Converts nested dictionary to pandas dataframe
 
+**Usage**
+
+`df = nested_dictionary_to_df(d)`
+
 **Example:**
 
 *Input Dictionary:*
 
-    {'Task': [{'Logs': [{'Name': 'log1', 'error': 'errorname1'},
+    d = {'Task': [{'Logs': [{'Name': 'log1', 'error': 'errorname1'},
                         {'Name': 'log2', 'error': 'errorname2'}],
                'TaskName': 'Taskname1',
                'Taskid': 1},
@@ -16,6 +20,8 @@ Converts nested dictionary to pandas dataframe
      'job': 1,
      'jobname': 'name'}
  
+    df = nested_dictionary_to_df(d)`
+    
  *Output DataFrame:*
  
         Name       error   TaskName  Taskid  job jobname
@@ -26,6 +32,3 @@ Converts nested dictionary to pandas dataframe
 
 Note: Output DataFrame is easily converted to CSV if desired using df.to_csv(...)
 
-**Usage**
-
-`df = nested_dictionary_to_df(d)`

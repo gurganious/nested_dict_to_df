@@ -1,6 +1,8 @@
 # nested_dict_to_df
 Converts nested dictionary to pandas dataframe
 
+CSV is easily obtained by converting the dataframe to CSV using Dataframe to_csv(...) function
+
 **Usage**
 
 `df = nested_dictionary_to_df(d)`
@@ -20,7 +22,7 @@ Converts nested dictionary to pandas dataframe
      'job': 1,
      'jobname': 'name'}
  
-    df = nested_dictionary_to_df(d)`
+    df = nested_dictionary_to_df(d)
     
  *Output DataFrame:*
  

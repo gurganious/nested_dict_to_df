@@ -1,39 +1,27 @@
-import re
-
-def _flatten_dictionary(d):
+def _get_leaves(item, key = None, out = None):
     '''
-        Flattens dictionary to leaf nodes only
-    '''
-    def flatten(x, prefix = ''):
-        ' helper function to recursively flatten dictionary to leaf nodes only '
-        if isinstance(x, dict):
-            for a in x:
-                flatten(x[a], prefix + a + '_')
-        elif isinstance(x, list):
-            for i, k in enumerate(x):
-                flatten(k, prefix + '$' + str(i) + '_')
-        else:
-            out[prefix[:-1]] = x
-
-    out = {}
-    flatten(d)
-    return out
-
-def _merge(d):
-    '''
-        Merge fields by name of leaf node (i.e. last element in "_" delimited key)
-        (e.g. 'Task_$0_Logs_$0_Name' -> 'Name')
-        Input:
-            d - flattened dictionary (i.e. leaf nodes only)
+        Aggregate into a flattened dictionary based leaves of elements in nested dictionary
+        
+        Inputs:
+            item - item currently looping over
+            key - key to use in flattened dictionary
         Output:
-            Aggregate leaf nodes which same suffix
+            out - flattened dictionary
     '''
-    # get natural ordering of leaf nodes (i.e. want to append values by natural ordering)
-    ordered = dict(sorted(fd.items(), key = lambda x: tuple(re.split(r'(\d+)', x[0])), reverse=False))
-    result = {}
-    for k, v in ordered.items():
-        result.setdefault(k.split("_")[-1], []).append(v)
-    return result
+    if out is None:
+        out = {}
+        
+    if isinstance(item, dict):
+        for k, v in item.items():
+            get_leaves(v, k, out)
+        return out
+    elif isinstance(item, list):
+        for i in item:
+            get_leaves(i, key, out)
+        return out
+    else:
+        out.setdefault(key, []).append(item)
+        return out
 
 def _repeat(d):
     '''
@@ -54,6 +42,7 @@ def nested_dict_to_df(d):
         Converts a nested dictionary to dataframe
     '''
     # Convert nested dictionary to table form
-    table = _repeat(_merge(_flatten_dictionary(d)))
+    table = _repeat((_get_leaves(d)))
     
     return pd.DataFrame(table)
+

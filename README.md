@@ -8,8 +8,8 @@ CSV is easily obtained by converting the dataframe to CSV using Dataframe to_csv
     # To get DataFrame
     df = nested_dictionary_to_df(d)
 
-    # To get CSV use:
-    df.set_index(df.columns[0]).to_csv()
+    # To get CSV string:
+    s = df.set_index(df.columns[0]).to_csv()
 
 **Example:**
 

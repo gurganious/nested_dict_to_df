@@ -5,7 +5,11 @@ CSV is easily obtained by converting the dataframe to CSV using Dataframe to_csv
 
 **Usage**
 
-`df = nested_dictionary_to_df(d)`
+    # To get DataFrame
+    df = nested_dictionary_to_df(d)
+
+    # To get CSV use:
+    df.set_index(df.columns[0]).to_csv()
 
 **Example:**
 
@@ -32,5 +36,10 @@ CSV is easily obtained by converting the dataframe to CSV using Dataframe to_csv
     2  log1  errorname1  Taskname2       2    1    name
     3  log2  errorname2  Taskname2       2    1    name
 
-Note: Output DataFrame is easily converted to CSV if desired using df.to_csv(...)
+*Output CSV*
 
+    job,jobname,Taskid,TaskName,Name,error
+    1,name,1,Taskname1,log1,errorname1
+    1,name,1,Taskname1,log2,errorname2
+    1,name,2,Taskname2,log1,errorname1
+    1,name,2,Taskname2,log2,errorname2

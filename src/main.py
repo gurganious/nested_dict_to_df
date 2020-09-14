@@ -13,11 +13,11 @@ def _get_leaves(item, key = None, out = None):
         
     if isinstance(item, dict):
         for k, v in item.items():
-            get_leaves(v, k, out)
+            _get_leaves(v, k, out)
         return out
     elif isinstance(item, list):
         for i in item:
-            get_leaves(i, key, out)
+            _get_leaves(i, key, out)
         return out
     else:
         out.setdefault(key, []).append(item)

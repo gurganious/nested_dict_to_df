@@ -26,7 +26,7 @@ CSV is easily obtained by converting the dataframe to CSV using Dataframe to_csv
      'job': 1,
      'jobname': 'name'}
  
-    df = nested_dictionary_to_df(d)
+    df = nested_dict_to_df(d)
     
  *Output DataFrame:*
  

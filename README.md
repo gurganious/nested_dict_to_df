@@ -5,7 +5,7 @@ CSV is easily obtained by converting the dataframe to CSV using Dataframe to_csv
 
 **Usage**
 
-    # To get DataFrame
+    # To get DataFrame from dictionary d
     df = nested_dictionary_to_df(d)
 
     # To get CSV string:
@@ -16,30 +16,30 @@ CSV is easily obtained by converting the dataframe to CSV using Dataframe to_csv
 *Input Dictionary:*
 
     d = {'Task': [{'Logs': [{'Name': 'log1', 'error': 'errorname1'},
-                        {'Name': 'log2', 'error': 'errorname2'}],
-               'TaskName': 'Taskname1',
-               'Taskid': 1},
-              {'Logs': [{'Name': 'log1', 'error': 'errorname1'},
-                        {'Name': 'log2', 'error': 'errorname2'}],
-               'TaskName': 'Taskname2',
-               'Taskid': 2}],
-     'job': 1,
-     'jobname': 'name'}
+                    {'Name': 'log2', 'error': 'errorname2'}],
+           'Name': 'Taskname1',
+           'Taskid': 1},
+          {'Logs': [{'Name': 'log1', 'error': 'errorname1'},
+                    {'Name': 'log2', 'error': 'errorname2'}],
+           'TaskName': 'Taskname2',
+           'Taskid': 2}],
+ 'job': 1,
+ 'jobname': 'name'}
  
     df = nested_dict_to_df(d)
     
  *Output DataFrame:*
  
-        Name       error   TaskName  Taskid  job jobname
-    0  log1  errorname1  Taskname1       1    1    name
-    1  log2  errorname2  Taskname1       1    1    name
-    2  log1  errorname1  Taskname2       2    1    name
-    3  log2  errorname2  Taskname2       2    1    name
+         job jobname       Name  Taskid   TaskName Logs_Name       error
+    0    1    name  Taskname1       1  Taskname2      log1  errorname1
+    1    1    name  Taskname1       1  Taskname2      log2  errorname2
+    2    1    name  Taskname1       2  Taskname2      log1  errorname1
+    3    1    name  Taskname1       2  Taskname2      log2  errorname2
 
 *Output CSV*
 
-    job,jobname,Taskid,TaskName,Name,error
-    1,name,1,Taskname1,log1,errorname1
-    1,name,1,Taskname1,log2,errorname2
-    1,name,2,Taskname2,log1,errorname1
-    1,name,2,Taskname2,log2,errorname2
+    job,jobname,Name,Taskid,TaskName,Logs_Name,error
+    1,name,Taskname1,1,Taskname2,log1,errorname1
+    1,name,Taskname1,1,Taskname2,log2,errorname2
+    1,name,Taskname1,2,Taskname2,log1,errorname1
+    1,name,Taskname1,2,Taskname2,log2,errorname2

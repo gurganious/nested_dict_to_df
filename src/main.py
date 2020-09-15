@@ -93,7 +93,5 @@ def nested_dict_to_df(d):
     '''
     # Convert nested dictionary to table form
     table = _repeat(_merge_keys(_flatten_dict(d)))
-    print(table)
-    print()
     
     return pd.DataFrame(table)

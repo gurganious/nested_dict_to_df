@@ -1,6 +1,4 @@
 import pandas as pd
-import re
-from itertools import groupby
 
 def _flatten_dict(d):
     '''
@@ -21,16 +19,55 @@ def _flatten_dict(d):
     flatten(d)
     return out
 
-def _natural_sort_key(s, pattern = re.compile(r'[^\d]+|\d+')):
+
+def _get_base(k):
     '''
-        Splits with numbers and non-numbers into list sublists
-        of numbers only and non-numbers only
-        (i.e. used for sort key to obtain for natural sorting string)
+        Find key with numeric separators removed
     '''
-    return [int(x) if x.isnumeric() else x for x in pattern.findall(s)] 
+    if "_" in k:
+        s = '_'.join(k.split('_')[::2])  # even indexes (i.e. 'Task_$0_Name -> 'Task_Name')
+    else:
+        s = k
+    return s
+
+def _get_base_keys(keys):
+    '''
+        Set of keys with numeric separators removed
+        (use set since not unique without numeric separators)
+    '''
+    # Find keys with numeric separators removed
+    basekeys = set(_get_base(k) for k in keys)
+        
+    return sorted(basekeys, key=lambda t: (len(t), t.lower()))
+
+def _shortest_keys(keys):
+    '''
+        Maps keys to shorter form so they can be used for column names
+        Based upon smallest key suffix that does not overlap with other keys
+        suffix can be only separated at '_' boundaries in string (i.e. so on whole words)
+    '''
+    base_keys = _get_base_keys(keys)
+  
+    # Compute forward lookup
+    forward_ = {}
+    for k in base_keys:
+        if "_" in k:
+            arr = k.split('_')
+            for i in range(1, len(arr)+1):
+                # Going backwards thorugh k, find unique key which has not
+                # been used yet in out dictionary
+                suffix = '_'.join(arr[-i:])
+                if not suffix in forward_:
+                    forward_[suffix] = k
+                    break
+            
+        else:
+            forward_[k] = k
+            
+    # Form reverse lookup
+    reverse_ = {v:k for k, v in forward_.items()}
     
-def _groupby_key(kv):
-    return re.split(r'_\$\d+_', kv[0])
+    return forward_, reverse_
 
 def _merge_keys(fd):
     '''
@@ -49,29 +86,23 @@ def _merge_keys(fd):
         Inputs:
           fd - Flattened dictionary (by _flatten_dict)
     '''
-    # Sort dictionary key, values based upon keys (approximate natural sort)
-    fd_tups = sorted(fd.items(), key = lambda kv: (len(kv[0]),) + tuple(_natural_sort_key(kv[0])))
-
-    # Group keys by placing keys together regardless of index into original list
-    # i.e. splitting on r'_$\d+_'
-    g = groupby(fd_tups, key = _groupby_key)
     
-    # Aggregate items together based upon having the same key, ignoring list index
+    # Find shortest key set for flattened keys (i.e. shortest names for compatible key set)
+    forward_, reverse_ = _shortest_keys(fd.keys())
+    
+    # Aggregate items together based upon having the same key
     out = {}
-    for k, values in g:
-        # k will be lists such as ['Task', 'TaskName']
-        for i in range(1, len(k)+1):
-            # Going backwards thorugh k, find unique key which has not
-            # been used yet in out dictionary
-            prefix = '_'.join(k[-i:])
-            if not prefix in out:
-                out[prefix] = [value[1] for value in values]
-                break
-        else:
-            out[prefix].extend([value[1] for value in values])
+    for k, value in fd.items():
+        # Base key (skipping numbers i.e. )
+        base = _get_base(k)  # i.e. 'Task_$1_Logs_$2_name' -> 'Task_Logs_name'
+        
+        suffix = reverse_[base]
+        
+        # Add to column values for shortened key
+        out.setdefault(suffix, []).append(value)
             
     return out
-    
+
 def _repeat(d):
     '''
         Repeats elements in dictionary list values to all have the same length (assume fixed multiple)

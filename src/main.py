@@ -65,12 +65,11 @@ def _merge_keys(fd):
             # been used yet in out dictionary
             prefix = '_'.join(k[-i:])
             if not prefix in out:
+                out[prefix] = [value[1] for value in values]
                 break
         else:
-            raise Exception("Sorry, cold not find unique prefix for key")
+            out[prefix].extend([value[1] for value in values])
             
-        out[prefix] = [value[1] for value in values]
-    
     return out
     
 def _repeat(d):

@@ -15,7 +15,8 @@ CSV is easily obtained by converting the dataframe to CSV using Dataframe to_csv
 
 *Input Dictionary:*
 
-    d = {'Task': [{'Logs': [{'Name': 'log1', 'error': 'errorname1'},
+```
+ {'Task': [{'Logs': [{'Name': 'log1', 'error': 'errorname1'},
                     {'Name': 'log2', 'error': 'errorname2'}],
            'Name': 'Taskname1',
            'Taskid': 1},
@@ -25,6 +26,7 @@ CSV is easily obtained by converting the dataframe to CSV using Dataframe to_csv
            'Taskid': 2}],
  'job': 1,
  'jobname': 'name'}
+ ```
  
     df = nested_dict_to_df(d)
     

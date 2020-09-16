@@ -5,10 +5,10 @@ CSV is easily obtained by converting the dataframe to CSV using Dataframe to_csv
 
 **Usage**
 
-    # To get DataFrame from dictionary d
+    # Output Dataframe from dictionary d
     df = nested_dictionary_to_df(d)
 
-    # To get CSV string:
+    # Output CSV string:
     s = df.set_index(df.columns[0]).to_csv()
 
 **Example 1**

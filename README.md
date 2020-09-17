@@ -233,6 +233,7 @@ df = nested_dict_to_df(d, map_mods)
 5	1	jobname	jobstatus	jobtype	200	Taskname1	taskstatus1	Tasktype1	2logname2	/errorlog/file2		None
 ```
 *Output CSV*
+```
 job,name_,status_,Type,Taskid,Task_name,status,Task_Type,name,error,statuscomment,path
 1,jobname,jobstatus,jobtype,100,Taskname,taskstatus,Tasktype,logname,/errorlog/file,,
 1,jobname,jobstatus,jobtype,100,Taskname,taskstatus,Tasktype,logname1,/errorlog/file1,,
@@ -240,5 +241,6 @@ job,name_,status_,Type,Taskid,Task_name,status,Task_Type,name,error,statuscommen
 1,jobname,jobstatus,jobtype,200,Taskname1,taskstatus1,Tasktype1,2logname,/errorlog/file,,
 1,jobname,jobstatus,jobtype,200,Taskname1,taskstatus1,Tasktype1,2logname1,/errorlog/file1,,
 1,jobname,jobstatus,jobtype,200,Taskname1,taskstatus1,Tasktype1,2logname2,/errorlog/file2,,
+```
 
 

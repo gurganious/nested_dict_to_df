@@ -1,3 +1,6 @@
+# 9/17/2020
+# Add default mapping
+
 import pandas as pd
 
 def _flatten_dict(d):
@@ -40,37 +43,67 @@ def _get_base_keys(keys):
         
     return sorted(basekeys, key=lambda t: (len(t), t.lower()))
 
-def _shortest_keys(keys):
+def _update_maps(k, forward_, reverse_):
     '''
+       :param k   - key
+       :forward_  - forward mapping of current name to new name
+       :reverse_  - reverse key mapping
+       
+       Used by _shortest_keys to update mapping of keys to new names
+        Set of keys with numeric separators removed
+        (use set since not unique without numeric separators)
+    '''
+    arr = k.split('_')
+    ok = False
+    for i in range(1, len(arr)+1):
+        # Going backwards thorugh k, find unique key which has not
+        # been used yet in out dictionary
+        suffix = '_'.join(arr[-i:])
+        if not suffix in forward_:
+            break
+            
+    while suffix in reverse_:
+        suffix += '_'
+   
+    forward_[k] = suffix
+    reverse_[suffix] = k
+                   
+    return forward_, reverse_
+
+def _shortest_keys(keys, default_map = None):
+    '''
+        :param keys        - keys from flattened dictionary
+        :param default_map - default mapping of base key name to new names
+        
         Maps keys to shorter form so they can be used for column names
         Based upon smallest key suffix that does not overlap with other keys
         suffix can be only separated at '_' boundaries in string (i.e. so on whole words)
     '''
+    if default_map is None:
+        default_map = {}
+        
+    # Convert flattened key names to basic names by removing 
+    # numeric sepators such as
+    # 'Task_$1_Logs_$0_name' -> 'Task_Logs_name'
     base_keys = _get_base_keys(keys)
   
-    # Compute forward lookup
-    forward_ = {}
-    for k in base_keys:
-        if "_" in k:
-            arr = k.split('_')
-            for i in range(1, len(arr)+1):
-                # Going backwards thorugh k, find unique key which has not
-                # been used yet in out dictionary
-                suffix = '_'.join(arr[-i:])
-                if not suffix in forward_:
-                    forward_[suffix] = k
-                    break
-            
-        else:
-            forward_[k] = k
-            
-    # Form reverse lookup
+    # Init forward and reverse lookup
+    forward_ = {k:v for k, v in default_map.items()}
     reverse_ = {v:k for k, v in forward_.items()}
     
+    # Compute keys
+    for k in base_keys:
+        if k not in default_map:
+            _update_maps(k, forward_, reverse_)
+            
     return forward_, reverse_
 
-def _merge_keys(fd):
+def _merge_keys(fd, default_map = None):
     '''
+        :param fd     - flattened dictionary
+        :default_map - default map of base keys to new key words
+        :return      - dictionary with items aggregated by key
+        
         Merges compatible keys in flattened dictionary
         Example:
            {
@@ -82,13 +115,10 @@ def _merge_keys(fd):
              'Name': [1, 2]
            }
         where 'Name' is the shortest unique suffix name (ignore _$d_)
-    
-        Inputs:
-          fd - Flattened dictionary (by _flatten_dict)
     '''
     
     # Find shortest key set for flattened keys (i.e. shortest names for compatible key set)
-    forward_, reverse_ = _shortest_keys(fd.keys())
+    forward_, reverse_ = _shortest_keys(fd.keys(), default_map)
     
     # Aggregate items together based upon having the same key
     out = {}
@@ -96,7 +126,7 @@ def _merge_keys(fd):
         # Base key (skipping numbers i.e. )
         base = _get_base(k)  # i.e. 'Task_$1_Logs_$2_name' -> 'Task_Logs_name'
         
-        suffix = reverse_[base]
+        suffix = forward_[base]
         
         # Add to column values for shortened key
         out.setdefault(suffix, []).append(value)
@@ -117,11 +147,23 @@ def _repeat(d):
     # Repeat each item in list (i.e. [item for item in v for _ in range(max_//len(v))] )
     return {k:[item for item in v for _ in range(max_//len(v))] for k, v in d.items()}
     
-def nested_dict_to_df(d):
+def nested_dict_to_df(d, default_map = None):
     '''
         Converts a nested dictionary to dataframe
     '''
     # Convert nested dictionary to table form
-    table = _repeat(_merge_keys(_flatten_dict(d)))
+    table = _repeat(_merge_keys(_flatten_dict(d), default_map))
     
     return pd.DataFrame(table)
+   
+def show_default_name_map(d):
+    '''
+        Shows the default mapping of names for dictionary
+    '''
+    fd = _flatten_dict(d)
+    
+    forward, _ = _shortest_keys(fd)
+    
+    for k, v in forward.items():
+        print(f'{k} : {v}')
+        

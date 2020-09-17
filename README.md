@@ -100,6 +100,7 @@ CSV is easily obtained by converting the dataframe to CSV using Dataframe to_csv
               }              
             ]
     }
+ 
  ```
  
 *Output df*
@@ -123,4 +124,71 @@ job,Type,name,status,Task_Type,Task_name,path,Task_path,Taskid,Task_status,Task_
 1,jobtype,jobname,jobstatus,Tasktype1,Taskname1,,,100,taskstatus1,200,2logname,/errorlog/file1,,/errorlog/file1,
 1,jobtype,jobname,jobstatus,Tasktype1,Taskname1,,,100,taskstatus1,200,2logname1,/errorlog/file2,,/errorlog/file2,
 1,jobtype,jobname,jobstatus,Tasktype1,Taskname1,,,100,taskstatus1,200,2logname2,/errorlog/file2,,/errorlog/file2,
+```
+   
+ **Example 3**
+ *Input Dictionary*
+ ```
+ {
+            "job": 1,
+            "name": "jobname",
+            "status": "jobstatus",
+            "Type": "jobtype",
+            "Task": [
+              {
+                "Taskid": 100,
+                "name": "Taskname",
+                "status": "taskstatus",
+                "Type": "Tasktype",
+                "Logs": [
+                  {
+                    "name": "logname",
+                    "error": "/errorlog/file"
+                  },
+                  {
+                    "name": "logname1",
+                    "error": "/errorlog/file1"
+                  },
+                  {
+                    "name": "logname2",
+                    "error": "/errorlog/file2"
+                  }
+                ],
+              "statuscomment": "",
+              "path": null
+              },
+              {
+                "Taskid": 200,
+                "name": "Taskname1",
+                "status": "taskstatus1",
+                "Type": "Tasktype1",
+                "Logs": [
+                  {
+                    "name": "2logname",
+                    "error": "/errorlog/file"
+                  },
+                  {
+                    "name": "2logname1",
+                    "error": "/errorlog/file1"
+                  },
+                  {
+                    "name": "2logname2",
+                    "error": "/errorlog/file2"
+                  }
+                ],
+              "statuscomment": "",
+              "path": null                
+              }              
+            ]
+}
+```
+*Output df*
+```
+	job	name	status	Type	Taskid	Task_name	Task_status	Task_Type	Logs_name	error	statuscomment	path
+0	1	jobname	jobstatus	jobtype	100	Taskname	taskstatus	Tasktype	logname	/errorlog/file		None
+1	1	jobname	jobstatus	jobtype	100	Taskname	taskstatus	Tasktype	logname1	/errorlog/file1		None
+2	1	jobname	jobstatus	jobtype	100	Taskname	taskstatus	Tasktype	logname2	/errorlog/file2		None
+3	1	jobname	jobstatus	jobtype	200	Taskname1	taskstatus1	Tasktype1	2logname	/errorlog/file		None
+4	1	jobname	jobstatus	jobtype	200	Taskname1	taskstatus1	Tasktype1	2logname1	/errorlog/file1		None
+5	1	jobname	jobstatus	jobtype	200	Taskname1	taskstatus1	Tasktype1	2logname2	/errorlog/file2		None
 ```

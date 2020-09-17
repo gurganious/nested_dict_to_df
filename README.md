@@ -192,3 +192,13 @@ job,Type,name,status,Task_Type,Task_name,path,Task_path,Taskid,Task_status,Task_
 4	1	jobname	jobstatus	jobtype	200	Taskname1	taskstatus1	Tasktype1	2logname1	/errorlog/file1		None
 5	1	jobname	jobstatus	jobtype	200	Taskname1	taskstatus1	Tasktype1	2logname2	/errorlog/file2		None
 ```
+*Output CSV*
+```
+job,name,status,Type,Taskid,Task_name,Task_status,Task_Type,Logs_name,error,statuscomment,path
+1,jobname,jobstatus,jobtype,100,Taskname,taskstatus,Tasktype,logname,/errorlog/file,,
+1,jobname,jobstatus,jobtype,100,Taskname,taskstatus,Tasktype,logname1,/errorlog/file1,,
+1,jobname,jobstatus,jobtype,100,Taskname,taskstatus,Tasktype,logname2,/errorlog/file2,,
+1,jobname,jobstatus,jobtype,200,Taskname1,taskstatus1,Tasktype1,2logname,/errorlog/file,,
+1,jobname,jobstatus,jobtype,200,Taskname1,taskstatus1,Tasktype1,2logname1,/errorlog/file1,,
+1,jobname,jobstatus,jobtype,200,Taskname1,taskstatus1,Tasktype1,2logname2,/errorlog/file2,,
+```

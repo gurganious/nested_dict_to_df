@@ -6,7 +6,8 @@ CSV is easily obtained by converting the dataframe to CSV using Dataframe to_csv
 **Usage**
 
     # Output Dataframe from dictionary d
-    df = nested_dictionary_to_df(d)
+    # mod_map is modifications of default column name mappings (optional)
+    df = nested_dictionary_to_df(d, mod_map)
 
     # Output CSV string:
     s = df.set_index(df.columns[0]).to_csv()
@@ -36,6 +37,15 @@ CSV is easily obtained by converting the dataframe to CSV using Dataframe to_csv
     3    1    name  Taskname1       2  Taskname2      log2  errorname2
 
 *Output CSV*
+```
+job,name_,status_,Type,Taskid,Task_name,status,Task_Type,name,error,statuscomment,path
+1,jobname,jobstatus,jobtype,100,Taskname,taskstatus,Tasktype,logname,/errorlog/file,,
+1,jobname,jobstatus,jobtype,100,Taskname,taskstatus,Tasktype,logname1,/errorlog/file1,,
+1,jobname,jobstatus,jobtype,100,Taskname,taskstatus,Tasktype,logname2,/errorlog/file2,,
+1,jobname,jobstatus,jobtype,200,Taskname1,taskstatus1,Tasktype1,2logname,/errorlog/file,,
+1,jobname,jobstatus,jobtype,200,Taskname1,taskstatus1,Tasktype1,2logname1,/errorlog/file1,,
+1,jobname,jobstatus,jobtype,200,Taskname1,taskstatus1,Tasktype1,2logname2,/errorlog/file2,,
+```
 
     job,jobname,Name,Taskid,TaskName,Logs_Name,error
     1,name,Taskname1,1,Taskname2,log1,errorname1
@@ -202,3 +212,26 @@ job,name,status,Type,Taskid,Task_name,Task_status,Task_Type,Logs_name,error,stat
 1,jobname,jobstatus,jobtype,200,Taskname1,taskstatus1,Tasktype1,2logname1,/errorlog/file1,,
 1,jobname,jobstatus,jobtype,200,Taskname1,taskstatus1,Tasktype1,2logname2,/errorlog/file2,,
 ```
+
+**Example 4** (using Example 3 data with mod_map)
+
+```
+map_mods = {
+  'Task_Logs_name': 'name',
+  'Task_status': 'status'
+}
+df = nested_dict_to_df(d, map_mods)
+```
+*Output df*
+```
+	job	name_	status_	Type	Taskid	Task_name	status	Task_Type	name	error	statuscomment	path
+0	1	jobname	jobstatus	jobtype	100	Taskname	taskstatus	Tasktype	logname	/errorlog/file		None
+1	1	jobname	jobstatus	jobtype	100	Taskname	taskstatus	Tasktype	logname1	/errorlog/file1		None
+2	1	jobname	jobstatus	jobtype	100	Taskname	taskstatus	Tasktype	logname2	/errorlog/file2		None
+3	1	jobname	jobstatus	jobtype	200	Taskname1	taskstatus1	Tasktype1	2logname	/errorlog/file		None
+4	1	jobname	jobstatus	jobtype	200	Taskname1	taskstatus1	Tasktype1	2logname1	/errorlog/file1		None
+5	1	jobname	jobstatus	jobtype	200	Taskname1	taskstatus1	Tasktype1	2logname2	/errorlog/file2		None
+```
+*Output CSV*
+
+

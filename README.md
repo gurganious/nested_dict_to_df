@@ -11,7 +11,7 @@ CSV is easily obtained by converting the dataframe to CSV using Dataframe to_csv
     # Output CSV string:
     s = df.set_index(df.columns[0]).to_csv()
 
-**Example 1**
+**Example 1 (simple: leaves have different key)**
 
 *Input Dictionary:*
 
@@ -43,7 +43,7 @@ CSV is easily obtained by converting the dataframe to CSV using Dataframe to_csv
     1,name,Taskname1,2,Taskname2,log1,errorname1
     1,name,Taskname1,2,Taskname2,log2,errorname2
     
- **Example 2**
+ **Example 2 (some leaves have same key)**
  
  *Input Dictionary*
  
@@ -126,7 +126,7 @@ job,Type,name,status,Task_Type,Task_name,path,Task_path,Taskid,Task_status,Task_
 1,jobtype,jobname,jobstatus,Tasktype1,Taskname1,,,100,taskstatus1,200,2logname2,/errorlog/file2,,/errorlog/file2,
 ```
    
- **Example 3**
+ **Example 3 (complex: many leaves have same key)**
  *Input Dictionary*
  ```
  {

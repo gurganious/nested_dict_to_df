@@ -63,10 +63,13 @@ def _update_maps(k, forward_, reverse_):
                    
     return forward_, reverse_
 
+def _depth(k):
+    return len(_get_base(k).split('_'))
+
 #################################################################################
 # Core functions
 #################################################################################
-def _flatten_dict(d, no_expansion_columns):
+def _flatten_dict(d, *no_expansion_columns):
     '''
         Flattens dictionary to leaf nodes only
     '''
@@ -107,17 +110,18 @@ def _form_dictionaries(fd):
         _update_maps(k, forward_, reverse_)
         
     # Group keys by number of separators (i.e. length of path to leaf)
-    sorted_fd = sorted(fd.items(), key = lambda kv: len(kv[1]))
-    g = groupby(sorted_fd, lambda kv: len(kv[1]))
+    sorted_fd = sorted(fd.items(), key = lambda kv: (_depth(kv[0]), len(kv[1])))
+    g = groupby(sorted_fd, lambda kv: (_depth(kv[0]), len(kv[1])))
     # groups of (2, [('Jobs_job', [1, 2]), ('Jobs_jobname', ['jobname', 'jobname']), etc.
 
     out = {}
-    for cnt, subgroup in g:
+    for kval, subgroup in g:
         # Outer dictionary is just the length of path for group i.e. 'Jobs_job' has path length 2
-        out[cnt] = {'_$mergekey': [1]*cnt}   # inject a merge key for use by DataFrame join in _form_dataframes
+        out[kval] = {'_$mergekey': [1]*kval[1]}   # inject a merge key for use by DataFrame join in _form_dataframes
+                                                  # based upon number of items in list
         for v in subgroup:
             v = list(v)
-            out[cnt][forward_[v[0]]] = v[1]
+            out[kval][forward_[v[0]]] = v[1]
     
     return out
 
@@ -142,7 +146,7 @@ def _form_dataframes(groups_by_count):
         return value
 
     # Convert each dictionary to DataFrame which have the same lenght
-    dfs = (DataFrame(dic) for cnt, dic in  groups_by_count.items())
+    dfs = (DataFrame(dic) for kval, dic in  groups_by_count.items())
    
     # Perform outer join on DataFrame (i.e. merging different lengths)
     df = _reduce(_join, dfs)
@@ -160,7 +164,7 @@ def nested_dict_to_df(d, *no_expansion_columns):
         Converts a nested dictionary to dataframe
     '''
     # Convert nested dictionary to table form
-    fd = _flatten_dict(d, no_expansion_columns)            # Flattened dictionaries
+    fd = _flatten_dict(d, *no_expansion_columns)            # Flattened dictionaries
     dics = _form_dictionaries(fd)                          # Merge based upon path length to leaf nodes
     return _form_dataframes(dics)                          # Merge dictionaries using DataFrame outer join
    

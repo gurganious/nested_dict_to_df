@@ -14,6 +14,25 @@ CSV is easily obtained by converting the dataframe to CSV using Dataframe to_csv
     # Output CSV string:
     s = df.set_index(df.columns[0]).to_csv()
 
+**Simple Example**
+
+d = {
+    "a": 1,
+    "b": 2,
+    "c":[1, 2]
+}
+
+*Run*
+
+     df = nested_dictionary_to_df(d)
+     
+*Output*
+
+```
+	a	b	c
+0	1	2	1
+1	1	2	2```
+
 **Example**
 ```
 d = {
@@ -70,7 +89,7 @@ d = {
 }
 ```
 
-*Run (not expanding Logs nodes)*
+*Run*
 
     df = nested_dict_to_df(d, 'Logs')  # not expanding "Logs" nodes
     note for csv string: csv = df.set_index(df.columns[0]).to_csv()

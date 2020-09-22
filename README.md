@@ -16,11 +16,10 @@ CSV is easily obtained by converting the dataframe to CSV using Dataframe to_csv
 
 **Simple Example**
 
-d = {
-    "a": 1,
-    "b": 2,
-    "c":[1, 2]
-}
+ ```d = { "a": [1, 2], "b": [3, 4], "c": [5, 6]}```
+
+df = nested_dict_to_df(t)
+
 
 *Run*
 
@@ -30,8 +29,8 @@ d = {
 
 ```
 	a	b	c
-0	1	2	1
-1	1	2	2
+0	1	3	5
+1	2	4	6
 ```
 
 **Example**

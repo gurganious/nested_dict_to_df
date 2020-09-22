@@ -23,6 +23,8 @@ def _first_iter(k):
     '''
         First number in key token i.e. a_$1_b_$0 -> 1
     '''
+    if not "_" in k:
+        return -1
     return _get_iters(k)[1]
 
 def _natural_sort_key(s):
@@ -106,8 +108,10 @@ def _first_iter(k):
     '''
         First number in key token i.e. a_$1_b_$0 -> 1
     '''
-    return _get_iters(k)[1]
-    
+    try:
+        return _get_iters(k)[1]
+    except IndexError:
+        return -1
 
 def _sort_key(kv):
     '''
@@ -125,7 +129,7 @@ def _group_key(kv):
     '''
     Key function used to group flattened dictionary
     '''
-    if isinstance(kv, list):
+    if not isinstance(kv, str):
         kv = kv[0]
     t = _get_iters(kv[0])
     if len(t) <= 1:

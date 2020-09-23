@@ -36,7 +36,8 @@ df = nested_dict_to_df(t)
 **Example**
 
 ```
-d = {
+# JSON String
+s = {
             "job": 1,
             "name": "jobname",
             "status": "jobstatus",
@@ -92,7 +93,11 @@ d = {
 
 *Run*
 
-    df = nested_dict_to_df(d, 'Logs')  # not expanding "Logs" nodes
+    # Convert json string to dictionary
+    d = json.loads(s)
+    
+    # Generate DataFrame
+    df = nested_dict_to_df(d, "Logs")  # not expanding "Logs" nodes
     note for csv string: csv = df.set_index(df.columns[0]).to_csv()
     
 *Output*

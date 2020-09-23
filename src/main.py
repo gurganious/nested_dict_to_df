@@ -12,51 +12,18 @@ Merge_Key = '_$mergekey'
 #################################################################################
 # Helper functions
 #################################################################################
-def _get_iters(s, pattern = re.compile(r'[^\d]+|\d+')):
-    '''
-        List of numerical list iterations in field name
-        i.e. a_$1_x_$2 -> [1, 2]
-    '''
-    return [int(x) if x.isnumeric() else x for x in pattern.findall(s)] 
-    
-def _first_iter(k):
-    '''
-        First number in key token i.e. a_$1_b_$0 -> 1
-    '''
-    if not "_" in k:
-        return -1
-    return _get_iters(k)[1]
-
-def _natural_sort_key(s):
-    '''
-        Sort key for strings based upon number of digits and
-        ordering.
-        Splits with numbers and non-numbers into list sublists
-        of numbers only and non-numbers only
-        (i.e. s = "Jobs_$0_Task_$0_Logs
-              returns [5, 'Jobs_$', 0, '_Task_$', 0, '_Logs']")
-    '''
-    return [_depth(s), _get_base(s), ] + _get_iters(s)
-
-def _get_base(k):
+def _get_base(k, pattern = re.compile(r'^\$\d+$')):
     '''
         Find key with numeric separators removed
     '''
-    if "$" in k:
-        s = '_'.join(k.split('_')[::2])  # even indexes (i.e. 'Task_$0_Name -> 'Task_Name')
-    else:
-        s = k
-    return s
+    return '_'.join(x for x in k.split('_') if not pattern.match(x))
 
-def _get_base_keys(keys):
+def _seq_numbers(k, pattern = re.compile(r'(?<=\$)\d+')):
     '''
-        Set of keys with numeric separators removed
-        (use set since not unique without numeric separators)
+        Gets numbers in key pattern associated with sequences 
+        i.e. 'Task_$0_Name_$1 -> (0, 1)
     '''
-    # Find keys with numeric separators removed
-    basekeys = set(_get_base(k) for k in keys)
-        
-    return sorted(basekeys, key=lambda t: (len(t), t.lower()))
+    return tuple([int(x) for x in pattern.findall(k)])
 
 def _update_maps(k, forward_, reverse_):
     '''
@@ -104,41 +71,13 @@ def _depth(k):
     '''
     return len(_get_base(k).split('_'))
 
-def _first_iter(k):
+def _parent(k):
     '''
-        First number in key token i.e. a_$1_b_$0 -> 1
-    '''
-    try:
-        return _get_iters(k)[1]
-    except IndexError:
-        return -1
-
-def _sort_key(kv):
-    '''
-    Key function used to sort flattened dictionary
-    '''
-    t = _get_iters(kv[0])
-    if len(t) <= 1:
-        return (_depth(kv[0]),)
-    else:
-        t = t[1::2]  # list indexes only
-        #t = t[:-1]   # leave out last element
-        return  (_depth(kv[0]),) + tuple(t)
+        Parent node based upon key
+        i.e. Jobs_TASKS_TASKId -> Jobs_TASKS
     
-def _group_key(kv):
     '''
-    Key function used to group flattened dictionary
-    '''
-    if not isinstance(kv, str):
-        kv = kv[0]
-    t = _get_iters(kv[0])
-    if len(t) <= 1:
-        return (_depth(kv),)
-    else:
-        t = t[1::2]  # list indexes only
-        t = t[:-1]   # leave out last element
-        return  (_depth(kv[0]),) + tuple(t)
-    
+    return '_'.join(_get_base(k).split('_')[:-1])  # Not including the last item
     
 #################################################################################
 # Core functions
@@ -152,8 +91,8 @@ def _flatten_dict(d, *no_expansion_columns):
         if isinstance(x, dict):
             for a in x:
                 if a in no_expansion_columns:
-                    #out.setdefault(_get_base(prefix + a), []).append(x[a])
-                    out[prefix + a] = str(x[a])
+                    my_prefix = prefix + a
+                    out.append((_get_base(my_prefix), _seq_numbers(my_prefix), x[a]))
                 else:
                     flatten(x[a], prefix + a + '_')
         elif isinstance(x, list):
@@ -161,17 +100,17 @@ def _flatten_dict(d, *no_expansion_columns):
                 flatten(k, prefix + '$' + str(i) + '_')
         else:
             # Place common leaf values in list
-            #out.setdefault(prefix[:-1], []).append(x)
-            out[prefix[:-1]] = x
+            my_prefix = prefix[:-1]
+            out.append((_get_base(my_prefix), _seq_numbers(my_prefix), x))
 
-    out = {}
+    out = []
     flatten(d)
     
     # Sort keys in natural order
-    out = dict(sorted(out.items(), key=lambda kv: _natural_sort_key(kv[0].lower())))
-    
-    return out
+    return sorted(out, key = lambda kv: (_depth(kv[0]), kv[0].lower()))
 
+
+    
 def _form_dictionaries(fd):
     '''
         Forms dictionaries of similar keys from flattened dictionary
@@ -216,27 +155,6 @@ def _form_dataframes(dics):
         Forms Dataframes of items with similar number of values in item (by count)
     
     '''
-    def _join(df1, df2):
-        '''
-            Outer merge join of two dataframes
-        '''
-        if df1 is None:
-            return df2
-        if df2 is None:
-            return df1
-        return merge(df1, df2, on = Merge_Key)
-    
-    def _stack(df1, df2):
-        '''
-            vertically stack two data frames
-        '''
-        if df1 is None:
-            return df2
-        if df2 is None:
-            return df1
-        return pd.concat([df1, df2], ignore_index=True)
-
-
     # Group dics by depth
     k_lst, df_result, df_current, df_accum = None, None, None, None
     
@@ -270,7 +188,91 @@ def _form_dataframes(dics):
     df_result.rename(columns = rename_map, inplace = True)
     
     return df_result
+   
+def _group_fields(fd):
+    '''
+        group fields from flattened dictioary which is a list of:
+        (base_name, seq_number array, value)
+    '''
+    def _join(df1, df2):
+        '''
+            Outer merge join of two dataframes
+        '''
+        if df1 is None:
+            return df2
+        if df2 is None:
+            return df1
+        # Use merge based uopn the minimum of the two widths
+        merge_key = f'{Merge_Key}'
+        min1 = min(len(x) for x in df1[merge_key])
+        min2 = min(len(x) for x in df2[merge_key])
+        if min1 == min2:
+            result = merge(df1, df2, on = merge_key)
+        elif min1 < min2:
+            # Merge key use the shorter of two tuples
+            df2[Merge_Key] = df2[Merge_Key].apply(lambda x: x[:min1])
+            result = merge(df1, df2, on = merge_key)
+        else:
+            # Merge key use the shorter of two tuples
+            df1[Merge_Key] = df1[Merge_Key].apply(lambda x: x[:min2])
+            result = merge(df1, df2, on = merge_key)
+        return result
+    
+    def _stack(df1, df2):
+        '''
+            vertically stack two data frames
+        '''
+        if df1 is None:
+            return df2
+        if df2 is None:
+            return df1
+        return pd.concat([df1, df2], ignore_index=True)
+    
+    def _reduce(function, iterable, initializer=None):
+        ' code equivalent of functools reduces'
+        # In case you don't have functools.reduce
+        it = iter(iterable)
+        if initializer is None:
+            value = next(it)
+        else:
+            value = initializer
+        for element in it:
+            value = function(value, element)
+        return value
+
+    merge_key = f"{Merge_Key}"
+    df_parents = []
+    for k0, v0 in groupby(fd, lambda x: _parent(x[0])):
+        df_series = []
+        for k1, v1 in groupby(v0, lambda x: x[0]):
+            # Create DataFrame of each Series and stack
+            # Map triplets to DataFrames
+            # Base, Seq, value
+            # Tuples to Dictionary
+            dics = [{base:[val], merge_key:[seq]} for base, seq, val in v1]
             
+            # Dictionary to DataFrames
+            # Stack dataframes for series
+            df = _reduce(_stack, (DataFrame(d) for d in dics))
+            
+            df_series.append(df)
+            
+        # Join series
+        df_parent = _reduce(_join, df_series)
+        
+        df_parents.append(df_parent)
+    # Join parents
+    df_result = _reduce(_join, df_parents)
+    
+    # Drop merge key column
+    df_result = df_result.drop(f'{Merge_Key}', 1)
+    
+    # Minimize names
+    rename_map = _minimize_names(df_result.columns)
+    df_result.rename(columns = rename_map, inplace = True)
+    
+    return df_result
+        
 #################################################################################
 # Main function
 #################################################################################
@@ -279,7 +281,6 @@ def nested_dict_to_df(d, *no_expansion_columns):
         Converts a nested dictionary to dataframe
     '''
     # Convert nested dictionary to table form
-    fd = _flatten_dict(d, *no_expansion_columns)            # Flattened dictionaries
-    dics = _form_dictionaries(fd)                          # Aggregate nodes along same path based upon names
-    return _form_dataframes(dics)                          # Merge dictionaries using DataFrame outer join and concat
+    fd = _flatten_dict(d, *no_expansion_columns)      # Flattened dictionaries
+    return _group_fields(fd)                          # Merge dictionaries using DataFrame outer join and concat
  

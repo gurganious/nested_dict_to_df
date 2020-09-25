@@ -7,9 +7,9 @@ CSV is easily obtained by converting the dataframe to CSV using Dataframe to_csv
 
     # Output Dataframe from dictionary d
     # mod_map is modifications of default column name mappings (optional)
-    df = nested_dictionary_to_df(d, leaf1, leafe2, ...)
+    df = nested_dictionary_to_df(d, max_depth)
 
-    leaf1, leaf2, ... is optional names of nodes not to expand in recursion in determining the leaf nodes
+    max_depth to expand in recursion in determining the leaf nodes
     
     # Output CSV string:
     s = df.set_index(df.columns[0]).to_csv()
@@ -17,9 +17,6 @@ CSV is easily obtained by converting the dataframe to CSV using Dataframe to_csv
 **Simple Example**
 
  ```d = { "a": [1, 2], "b": [3, 4], "c": [5, 6]}```
-
-df = nested_dict_to_df(t)
-
 
 *Run*
 
@@ -97,25 +94,25 @@ s = {
     d = json.loads(s)
     
     # Generate DataFrame
-    df = nested_dict_to_df(d, "Logs")  # not expanding "Logs" nodes
+    df = nested_dict_to_df(d, 1)  # only expand to depth 1
     note for csv string: csv = df.set_index(df.columns[0]).to_csv()
     
 *Output*
 
 ```
-	job	name	status	Type	Logs	Task_name	path	Task_status	statuscomment	Taskid	Task_Type
+	job	name	status	Type	Logs	Task.name	path	Task.status	statuscomment	Taskid	Task.Type
 0	1	jobname	jobstatus	jobtype	[{'name': 'logname', 'error': '/errorlog/file'...	Taskname	None	taskstatus		100	Tasktype
 1	1	jobname	jobstatus	jobtype	[{'name': '2logname', 'error': '/errorlog/file...	Taskname1	None	taskstatus1		200	Tasktype1
 ```
 
-*Run (expanding Logs nodes)*
+*Run (expand unlimited depth)*
 
     df = nested_dict_to_df(d)
     
  *Output*
  
  ```
- 	job	name	status	Type	Task_name	path	Task_status	statuscomment	Taskid	Task_Type	error	Logs_name
+	job	name	status	Type	Task.name	path	Task.status	statuscomment	Taskid	Task.Type	error	Logs.name
 0	1	jobname	jobstatus	jobtype	Taskname	None	taskstatus		100	Tasktype	/errorlog/file	logname
 1	1	jobname	jobstatus	jobtype	Taskname	None	taskstatus		100	Tasktype	/errorlog/file1	logname1
 2	1	jobname	jobstatus	jobtype	Taskname	None	taskstatus		100	Tasktype	/errorlog/file2	logname2

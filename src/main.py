@@ -8,6 +8,7 @@ import re
 # Constants
 #################################################################################
 Merge_Key = '_$mergekey'
+Field_Separator = '_'  # can be set to other values such as "."
 
 #################################################################################
 # Helper functions
@@ -16,7 +17,7 @@ def _get_base(k, pattern = re.compile(r'^\$\d+$')):
     '''
         Find key with numeric separators removed
     '''
-    return '_'.join(x for x in k.split('_') if not pattern.match(x))
+    return Field_Separator.join(x for x in k.split(Field_Separator) if not pattern.match(x))
 
 def _seq_numbers(k, pattern = re.compile(r'(?<=\$)\d+')):
     '''
@@ -35,16 +36,16 @@ def _update_maps(k, forward_, reverse_):
         Set of keys with numeric separators removed
         (use set since not unique without numeric separators)
     '''
-    arr = k.split('_')
+    arr = k.split(Field_Separator)
     for i in range(1, len(arr)+1):
         # Going backwards thorugh k, find unique key which has not
         # been used yet in out dictionary
-        suffix = '_'.join(arr[-i:])
+        suffix = Field_Separator.join(arr[-i:])
         if not suffix in reverse_:
             break
             
     while suffix in reverse_:
-        suffix += '_'
+        suffix += Field_Separator
    
     forward_[k] = suffix
     reverse_[suffix] = k
@@ -69,7 +70,7 @@ def _depth(k):
     '''
         Depth measure by number of underscores in base name
     '''
-    return len(_get_base(k).split('_'))
+    return len(_get_base(k).split(Field_Separator))
 
 def _parent(k):
     '''
@@ -77,7 +78,7 @@ def _parent(k):
         i.e. Jobs_TASKS_TASKId -> Jobs_TASKS
     
     '''
-    return '_'.join(_get_base(k).split('_')[:-1])  # Not including the last item
+    return Field_Separator.join(_get_base(k).split(Field_Separator)[:-1])  # Not including the last item
     
 #################################################################################
 # Core functions
@@ -94,10 +95,10 @@ def _flatten_dict(d, *no_expansion_columns):
                     my_prefix = prefix + a
                     out.append((_get_base(my_prefix), _seq_numbers(my_prefix), x[a]))
                 else:
-                    flatten(x[a], prefix + a + '_')
+                    flatten(x[a], prefix + a + Field_Separator)
         elif isinstance(x, list):
             for i, k in enumerate(x):
-                flatten(k, prefix + '$' + str(i) + '_')
+                flatten(k, prefix + '$' + str(i) + Field_Separator)
         else:
             # Place common leaf values in list
             my_prefix = prefix[:-1]
@@ -109,8 +110,6 @@ def _flatten_dict(d, *no_expansion_columns):
     # Sort keys in natural order
     return sorted(out, key = lambda kv: (_depth(kv[0]), kv[0].lower()))
 
-
-    
 def _form_dictionaries(fd):
     '''
         Forms dictionaries of similar keys from flattened dictionary
@@ -127,6 +126,7 @@ def _form_dictionaries(fd):
     # Group keys by number of separators (i.e. length of path to leaf)
     sorted_fd = sorted(fd.items(), key = _sort_key)
     g = groupby(sorted_fd, _group_key)
+    # if field sepator = "_" have:
     # (2, 1) [('Jobs_$0_job', [1]), ('Jobs_$1_job', [2]), ('Jobs_$0_jobname', ['jobname']), ('Jobs_$1_jobname', ['jobname']), 
 
     out = {}

@@ -1,14 +1,14 @@
-# 9/22/2020
-from itertools import groupby
+import json
 import pandas as pd
 from pandas import DataFrame, merge
+from itertools import groupby
 import re
 
 #################################################################################
 # Constants
 #################################################################################
 Merge_Key = '_$mergekey'
-Field_Separator = '_'  # can be set to other values such as "."
+Field_Separator = '.'  # can be set to other values such as "."
 
 #################################################################################
 # Helper functions
@@ -83,22 +83,22 @@ def _parent(k):
 #################################################################################
 # Core functions
 #################################################################################
-def _flatten_dict(d, *no_expansion_columns):
+def _flatten_dict(d, max_depth = -1):
     '''
         Flattens dictionary to leaf nodes only
     '''
-    def flatten(x, prefix = ''):
+    def flatten(x, prefix = '', depth = 0):
         ' helper function to recursively flatten dictionary to leaf nodes only '
         if isinstance(x, dict):
             for a in x:
-                if a in no_expansion_columns:
+                if max_depth != -1 and depth >= max_depth:
                     my_prefix = prefix + a
                     out.append((_get_base(my_prefix), _seq_numbers(my_prefix), x[a]))
                 else:
-                    flatten(x[a], prefix + a + Field_Separator)
+                    flatten(x[a], prefix + a + Field_Separator, depth + 1)
         elif isinstance(x, list):
             for i, k in enumerate(x):
-                flatten(k, prefix + '$' + str(i) + Field_Separator)
+                flatten(k, prefix + '$' + str(i) + Field_Separator, depth)
         else:
             # Place common leaf values in list
             my_prefix = prefix[:-1]
@@ -109,85 +109,6 @@ def _flatten_dict(d, *no_expansion_columns):
     
     # Sort keys in natural order
     return sorted(out, key = lambda kv: (_depth(kv[0]), kv[0].lower()))
-
-def _form_dictionaries(fd):
-    '''
-        Forms dictionaries of similar keys from flattened dictionary
-    
-    '''
-    # Find forward lookup table for unique names that base_keys (i.e. path to leaf name) can be shorted too
-    # Maps base name to shorter name i.e. Jobs_job - > job
-    base_keys = _get_base_keys(fd.keys())
-    forward_ = {}
-    reverse_ = {}
-    for k in base_keys:
-        _update_maps(k, forward_, reverse_)
-        
-    # Group keys by number of separators (i.e. length of path to leaf)
-    sorted_fd = sorted(fd.items(), key = _sort_key)
-    g = groupby(sorted_fd, _group_key)
-    # if field sepator = "_" have:
-    # (2, 1) [('Jobs_$0_job', [1]), ('Jobs_$1_job', [2]), ('Jobs_$0_jobname', ['jobname']), ('Jobs_$1_jobname', ['jobname']), 
-
-    out = {}
-    for kval, subgroup in g:
-        # Outer dictionary is just the length of path for group i.e. 'Jobs_job' has path length 2
-        out[kval] = {}   
-            
-        subgroup = list(subgroup)
-        for v in subgroup:
-            v = list(v)
-            out[kval].setdefault(_get_base(v[0]), []).append(v[1])
-        
-        # Add merge key based upon first item in group
-        first = set()
-        for v in subgroup:
-            v = list(v)
-            base = _get_base(v[0])
-            if not first or base in first:
-                out[kval].setdefault(f'{Merge_Key}', []).append(_first_iter(v[0]))
-                first.add(base)
-           
-    return out
-
-def _form_dataframes(dics):
-    '''
-        Forms Dataframes of items with similar number of values in item (by count)
-    
-    '''
-    # Group dics by depth
-    k_lst, df_result, df_current, df_accum = None, None, None, None
-    
-    for i, (k, d) in enumerate(dics.items()):
-        # Current dataframe from dictionary
-        df_current = DataFrame(d)
-        
-        if not k_lst:
-            k_lst = k[0]     # index of current group
-            df_accum = df_current
-        elif  k[0] == k_lst:
-            # Vertical stack DataFrames in same group
-            df_accum =_stack(df_accum, df_current)
-            
-        else:
-            # Merge current group with previous merge groups
-            df_result = _join(df_result, df_accum)
-            
-            # Reset accumulate of items in same group
-            df_accum = df_current
-            k_lst = k[0]
-   
-        if i == len(dics.items()) - 1:
-            df_result = _join(df_result, df_accum)
-            
-    # Drop merge key column
-    df_result = df_result.drop(f'{Merge_Key}', 1)
-    
-    # Minimize names
-    rename_map = _minimize_names(df_result.columns)
-    df_result.rename(columns = rename_map, inplace = True)
-    
-    return df_result
    
 def _group_fields(fd):
     '''
@@ -203,7 +124,7 @@ def _group_fields(fd):
         if df2 is None:
             return df1
         # Use merge based uopn the minimum of the two widths
-        merge_key = f'{Merge_Key}'
+        merge_key = Merge_Key
         min1 = min(len(x) for x in df1[merge_key])
         min2 = min(len(x) for x in df2[merge_key])
         if min1 == min2:
@@ -240,7 +161,7 @@ def _group_fields(fd):
             value = function(value, element)
         return value
 
-    merge_key = f"{Merge_Key}"
+    merge_key = Merge_Key
     df_parents = []
     for k0, v0 in groupby(fd, lambda x: _parent(x[0])):
         df_series = []
@@ -265,7 +186,7 @@ def _group_fields(fd):
     df_result = _reduce(_join, df_parents)
     
     # Drop merge key column
-    df_result = df_result.drop(f'{Merge_Key}', 1)
+    df_result = df_result.drop(Merge_Key, 1)
     
     # Minimize names
     rename_map = _minimize_names(df_result.columns)
@@ -276,11 +197,12 @@ def _group_fields(fd):
 #################################################################################
 # Main function
 #################################################################################
-def nested_dict_to_df(d, *no_expansion_columns):
+def nested_dict_to_df(d, max_depth = -1):
     '''
         Converts a nested dictionary to dataframe
     '''
     # Convert nested dictionary to table form
-    fd = _flatten_dict(d, *no_expansion_columns)      # Flattened dictionaries
+    fd = _flatten_dict(d, max_depth)      # Flattened dictionaries
     return _group_fields(fd)                          # Merge dictionaries using DataFrame outer join and concat
  
+

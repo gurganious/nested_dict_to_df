@@ -6,8 +6,8 @@ CSV is easily obtained by converting the dataframe to CSV using Dataframe to_csv
 **Usage**
 
     # Output Dataframe from dictionary d
-    # mod_map is modifications of default column name mappings (optional)
-    df = nested_dictionary_to_df(d, max_depth)
+    # max_depth max depth to recursive (option - -1 which is unlimited)
+    df = nested_dict_to_df(d, max_depth)
 
     max_depth to expand in recursion in determining the leaf nodes
     
